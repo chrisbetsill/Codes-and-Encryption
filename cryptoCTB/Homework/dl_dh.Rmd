@@ -1,0 +1,158 @@
+---
+title: 'Assignment: Due Monday, 11:59pm'
+author: "Chris Betsill"
+date: "October 17, 2016"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(comment = NA)
+library(gmp)
+```
+
+## 1. Diffie-Hellman Intruder-in-the-Middle attack.
+
+Suppose Alice and Bob conduct a Diffie-Hellman key exchange as follows.
+
+1. Alice and Bob agree on prime $p = 240922393$ and primitive root $\alpha=103$.
+2. Alice chooses secret $x = 120461539$ and sends $\alpha^x$ to Bob.
+3. Bob chooses secret $y = 81635591$ and sends $\alpha^y$ to Alice.
+
+Compute the shared secret key. Remember to do your calculations in $U(p)$.
+
+```{r}
+p <- 240922393
+alpha <- 103
+x <- 120461539
+y <- 81635591
+
+k <- powm(powm(alpha, x, p), y, p)
+print(k)
+```
+
+Suppose now that Eve has been able to intercept messages between Alice and Bob and replace them with her own messages. In the above transaction, Eve secretly does the following.
+
+- Eve chooses a "fake" exponent $z = 49182605$.
+- Eve intercepts Alice's message $\alpha^x$ and sends Bob $\alpha^z$ instead.
+- Eve intercepts Bob's message $\alpha^y$ and sends Alice $\alpha^z$ instead.
+
+Compute the keys that Alice and Bob would compute under this scenario. Call these keys `keyA` and `keyB`.
+
+```{r}
+p <- 240922393
+alpha <- 103
+x <- 120461539
+y <- 81635591
+z <- 49182605
+
+keyA <- powm(powm(alpha, x, p), z, p)
+keyB <- powm(powm(alpha, y, p), z, p)
+
+print(keyA)
+print(keyB)
+```
+
+$\rhd$ Explain why Eve is also able to compute `keyA` and `keyB`.  
+
+Eve was able to intercept both $\alpha^x$ and $\alpha^y$. Since she generated $z$, it is trivial to compute ($\alpha^x$)$^z$ and ($\alpha^y$)$^z$. The modulus $p$, was public. 
+ 
+$\rhd$ Suppose that Alice and Bob try to use a symmetric cipher to communicate using `keyA` and `keyB`. Explain, in your own words, how Eve could listen in on their conversation without being detected. (See page 258 if you are stuck.)
+
+Since she has both keys, she can intercept messages, decrypt them with the corresponding key, and rencrypt with the opposite key, and send them to the intended recipent with neither Alice or Bob noticing.
+
+## 2. ElGamal example
+
+Alice and Bob are communicating using the ElGamal cryptosystem with $p = 179841529021446883498969891$
+and $\alpha = 7$. Bob's secret exponent is $a = 10000$. 
+
+Give the triple that Bob makes public.
+
+```{r}
+alpha <- 7
+p <-  as.bigz("179841529021446883498969891")
+a <- 10000
+
+beta <- powm(alpha,a,p)
+
+cat(sprintf("(%f, %f, %f)", p, alpha, beta))
+
+```
+
+Using this public key, Alice sends the ciphertext pair 
+$$
+(129572415000137218728447332,172765025692695167473988064)
+$$ 
+to Bob. Decrypt. Use your `bigzToString` function to convert your answer to a string.
+
+```{r}
+library(cryptoCTB)
+r <- as.bigz("129572415000137218728447332")
+t <- as.bigz("172765025692695167473988064")
+p <-  as.bigz("179841529021446883498969891")
+a <- as.bigz("10000")
+ra <- powm(r, a, p)
+ira <- inv.bigz(ra, p)
+m <- (t*ira) %% p
+print(bigzToString(m))
+
+```
+
+## 3. Compute a discrete log modulo 2. 
+
+In $U(53457634678734567834567367867346003)$, compute
+$$
+L_5(31224112303063959919880288679125645)
+$$
+modulo 2. Show your work.
+```{r}
+p <- as.bigz("53457634678734567834567367867346003")
+beta <- as.bigz("31224112303063959919880288679125645")
+twoc <- as.bigz((p-1))
+c <- twoc/2
+x <- powm(beta, c, p)
+x
+
+```
+
+## 4. Apply the Chinese Remainder Theorem
+
+Use your `crtSolve` function to compute $L_3(47473199372)$ modulo $198123889721$. Use the following facts.
+$$
+\begin{aligned}
+L_3(47473199372) &\equiv 1 \pmod{5} \\
+L_3(47473199372) &\equiv 7 \pmod{8} \\
+L_3(47473199372) &\equiv 37 \pmod{71} \\
+L_3(47473199372) &\equiv 1977 \pmod{2371} \\
+L_3(47473199372) &\equiv 11395 \pmod{29423} \\
+\end{aligned}
+$$
+```{r}
+
+print(crtSolve(c(1,7,37, 1977, 11395), c(5,8,71,2371,29423)))
+
+
+```
+## 5. Test Brute Force times vs. Pohlig-Hellman times 
+
+1. Use the `nextprime` and `nextPrimRoot` functions to find a prime $p$, a primitive root $\alpha$, and a power $\beta$ of $\alpha$ such that your `discreteLogBrute` function takes more than 2 seconds (but less than a minute) to find the discrete logarithm $L_\alpha(\beta)$ in $U(p)$.
+```{r}
+p <- 3156001
+alpha <- nextPrimRoot(p)
+alpha
+beta <- 137
+print(system.time(discreteLogBrute(alpha, beta, p))[3])
+    
+
+
+
+```
+2. Use the `nextprime` and `nextPrimRoot` functions to find a prime $p$, a primitive root $\alpha$, and a power $\beta$ of $\alpha$ such that [*this online implementation of the Pohlig-Hellman algorithm*](https://www.alpertron.com.ar/DILOG.HTM) takes more than 2 seconds (but less than a minute) to find the discrete logarithm $L_\alpha(\beta)$ in $U(p)$.
+
+```{r}
+beta <- 17
+p <- 13107181911273173
+alpha <- nextPrimRoot(p)
+alpha
+
+```

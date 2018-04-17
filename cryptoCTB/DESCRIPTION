@@ -1,0 +1,13 @@
+Package: cryptoCTB
+Type: Package
+Title: Encryption Tools
+Version: 0.3.2
+Author: Chris Betsill
+Maintainer: Chris Betsill <cbetsill@westmont.edu>
+Description: This package contains various tools used for encryption.
+License: GNU General Public License, version 3 (GPL-3.0)
+LazyData: TRUE
+RoxygenNote: 5.0.1
+Imports: gmp
+NeedsCompilation: no
+Packaged: 2016-10-03 00:08:28 UTC; chris
